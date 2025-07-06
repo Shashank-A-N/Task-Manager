@@ -46,6 +46,7 @@ button {
   font-weight: bold;
   border: none;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 button:hover {
@@ -85,11 +86,7 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-  form{
-    display: block;
-    /* flex-direction: column; */
-    align-items: center;
-  }
+  form,
   #taskList li {
     flex-direction: column;
     align-items: flex-start;
