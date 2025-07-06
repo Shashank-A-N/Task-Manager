@@ -1,106 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Task Manager</title>
-    <style>
-        .completed {
-            text-decoration: line-through;
-            color: gray;
-        }
-        .task-actions {
-            margin-left: 10px;
-        }
-        .task-meta {
-            font-size: 0.9em;
-            color: #555;
-            margin-left: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Task Manager</title>
 </head>
 <body>
-    <form id="taskForm">
-        <div>Task <input type="text" id="task" name="task" placeholder="Enter your task" required></div>
-        <div>Due Date <input type="date" id="dueDate" name="dueDate" ></div>
-        <div>Time <input type="time" id="dueTime" name="dueTime" ></div>
-        <button type="submit">Add</button>
-    </form>
-    <ul id="taskList"></ul>
+  <form id="taskForm">
+    <input type="text" id="task" placeholder="Enter your task" required />
+    <input type="date" id="dueDate" />
+    <input type="time" id="dueTime" />
+    <button type="submit">Add</button>
+  </form>
 
-    <script>
-        const form = document.getElementById('taskForm');
-        const taskInput = document.getElementById('task');
-        const dueDateInput = document.getElementById('dueDate');
-        const dueTimeInput = document.getElementById('dueTime');
-        const taskList = document.getElementById('taskList');
+  <ul id="taskList"></ul>
 
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const taskValue = taskInput.value.trim();
-            const dueDateValue = dueDateInput.value;
-            const dueTimeValue = dueTimeInput.value;
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('taskForm');
+      const taskInput = document.getElementById('task');
+      const dueDateInput = document.getElementById('dueDate');
+      const dueTimeInput = document.getElementById('dueTime');
+      const taskList = document.getElementById('taskList');
 
-            if (taskValue && dueDateValue && dueTimeValue) {
-                const li = document.createElement('li');
-                const p = document.createElement('span');
-                p.textContent = taskValue;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const task = taskInput.value.trim();
+        const date = dueDateInput.value;
+        const time = dueTimeInput.value;
 
-                // Show due date and time
-                const meta = document.createElement('span');
-                meta.className = 'task-meta';
-                meta.textContent = `Due: ${dueDateValue} ${dueTimeValue}`;
+        if (!task || !date || !time) {
+          alert('Please fill all fields.');
+          return;
+        }
 
-                // Create Complete button
-                const completeBtn = document.createElement('button');
-                completeBtn.textContent = ' Done ';
-                completeBtn.className = 'task-actions';
-                completeBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    p.classList.add('completed');
-                    completeBtn.style.display = 'none';
-                    notCompletedBtn.style.display = 'inline-block';
-                    deleteBtn.style.display = 'inline-block';
-                });
+        const li = document.createElement('li');
 
-                // Create Not Completed button
-                const notCompletedBtn = document.createElement('button');
-                notCompletedBtn.textContent = ' Not Done ';
-                notCompletedBtn.className = 'task-actions';
-                notCompletedBtn.style.display = 'none';
-                notCompletedBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    p.classList.remove('completed');
-                    completeBtn.style.display = '';
-                    notCompletedBtn.style.display = 'none';
-                    deleteBtn.style.display = 'none';
-                });
+        const text = document.createElement('span');
+        text.textContent = task;
 
-                // Create Delete button
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = ' Delete ';
-                deleteBtn.className = 'task-actions';
-                deleteBtn.style.display = 'none';
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    li.remove();
-                });
+        const meta = document.createElement('span');
+        meta.className = 'task-meta';
+        meta.textContent = `Due: ${date} ${time}`;
 
-                li.appendChild(p);
-                li.appendChild(meta);
-                li.appendChild(completeBtn);
-                li.appendChild(notCompletedBtn);
-                li.appendChild(deleteBtn);
-                taskList.appendChild(li);
-
-                taskInput.value = '';
-                dueDateInput.value = '';
-                dueTimeInput.value = '';
-            } else {
-                alert('Please enter a task, date, and time.');
-            }
+        const doneBtn = document.createElement('button');
+        doneBtn.textContent = 'Done';
+        doneBtn.type = 'button';
+        doneBtn.addEventListener('click', () => {
+          text.classList.add('completed');
+          doneBtn.style.display = 'none';
+          delBtn.style.display = 'inline-block';
         });
-    </script>
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.type = 'button';
+        delBtn.style.display = 'none';
+        delBtn.addEventListener('click', () => li.remove());
+
+        li.append(text, meta, doneBtn, delBtn);
+        taskList.appendChild(li);
+
+        taskInput.value = '';
+        dueDateInput.value = '';
+        dueTimeInput.value = '';
+      });
+    });
+  </script>
 </body>
 </html>
