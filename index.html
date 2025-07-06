@@ -21,15 +21,13 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <form id="taskForm">
-            Task <input type="text" id="task" name="task" placeholder="Enter your task" required>
-            Due Date <input type="date" id="dueDate" name="dueDate" required>
-            Time <input type="time" id="dueTime" name="dueTime" required>
-            <button type="submit">Add</button>
-        </form>
-        <ul id="taskList"></ul>
-    </div>
+    <form id="taskForm">
+        <div>Task <input type="text" id="task" name="task" placeholder="Enter your task" required></div>
+        <div>Due Date <input type="date" id="dueDate" name="dueDate" ></div>
+        <div>Time <input type="time" id="dueTime" name="dueTime" ></div>
+        <button type="submit">Add</button>
+    </form>
+    <ul id="taskList"></ul>
 
     <script>
         const form = document.getElementById('taskForm');
