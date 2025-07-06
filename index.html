@@ -47,19 +47,36 @@
         const doneBtn = document.createElement('button');
         doneBtn.textContent = 'Done';
         doneBtn.type = 'button';
+
+        const undoneBtn = document.createElement('button');
+        undoneBtn.textContent = 'Undone';
+        undoneBtn.type = 'button';
+        undoneBtn.style.display = 'none';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.type = 'button';
+
+        // Done → Mark as completed
         doneBtn.addEventListener('click', () => {
           text.classList.add('completed');
           doneBtn.style.display = 'none';
-          delBtn.style.display = 'inline-block';
+          undoneBtn.style.display = 'inline-block';
         });
 
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'Delete';
-        delBtn.type = 'button';
-        delBtn.style.display = 'none';
-        delBtn.addEventListener('click', () => li.remove());
+        // Undone → Remove line-through
+        undoneBtn.addEventListener('click', () => {
+          text.classList.remove('completed');
+          undoneBtn.style.display = 'none';
+          doneBtn.style.display = 'inline-block';
+        });
 
-        li.append(text, meta, doneBtn, delBtn);
+        // Delete → Remove task
+        deleteBtn.addEventListener('click', () => {
+          li.remove();
+        });
+
+        li.append(text, meta, doneBtn, undoneBtn, deleteBtn);
         taskList.appendChild(li);
 
         taskInput.value = '';
