@@ -9,12 +9,14 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 
         .task-item.completed .task-text {
             text-decoration: line-through;
@@ -24,30 +26,58 @@
             cursor: pointer;
             touch-action: none;
         }
+        
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .glass-input {
+             background: rgba(255, 255, 255, 0.15);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .glass-button {
+             background: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-500">
+<body class="text-white">
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-3xl">
         <header class="text-center mb-8">
             <div class="flex justify-center items-center gap-4">
-                <h1 class="text-4xl sm:text-5xl font-bold text-violet-600 dark:text-violet-400">Task Manager</h1>
-                <button id="notification-bell" title="Manage Notifications" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                    <svg id="notification-bell-icon" class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <h1 class="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg">Task Manager</h1>
+                <button id="notification-bell" title="Manage Notifications" class="p-2 rounded-full glass-button transition-colors">
+                    <svg id="notification-bell-icon" class="w-6 h-6 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                 </button>
             </div>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">Organize your work and life, finally.</p>
+            <p class="text-gray-200 mt-2 drop-shadow-md">Organize your work and life, finally.</p>
         </header>
 
         <!-- Form to add new tasks -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mb-8">
+        <div class="glass-panel p-6 rounded-2xl mb-8">
             <form id="add-task-form" class="space-y-4">
-                <input type="text" id="task-input" placeholder="Add a new task..." class="w-full bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-violet-500 focus:ring-0 rounded-lg px-4 py-3 text-lg transition-colors duration-300" required>
+                <input type="text" id="task-input" placeholder="Add a new task..." class="w-full glass-input placeholder-gray-300 focus:ring-0 rounded-lg px-4 py-3 text-lg transition-colors duration-300" required>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <button type="button" id="set-date-btn" class="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Date</button>
-                    <button type="button" id="set-time-btn" class="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Time</button>
+                    <button type="button" id="set-date-btn" class="w-full sm:w-1/2 glass-button text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Date</button>
+                    <button type="button" id="set-time-btn" class="w-full sm:w-1/2 glass-button text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Time</button>
                 </div>
-                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <button type="submit" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                     Add Task
                 </button>
             </form>
@@ -55,57 +85,57 @@
 
         <!-- Loading Spinner -->
         <div id="loader" class="text-center py-10 hidden">
-             <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-violet-500 mx-auto"></div>
-             <p class="mt-4 text-gray-500">Loading tasks...</p>
+             <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-white/50 mx-auto"></div>
+             <p class="mt-4 text-gray-300">Loading tasks...</p>
         </div>
 
         <!-- To-Do List -->
-        <div id="task-list-container" class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div id="task-list-container" class="glass-panel p-4 sm:p-6 rounded-2xl">
             <ul id="task-list" class="space-y-4"></ul>
-            <p id="empty-state" class="text-center text-gray-500 py-6 hidden">Your task list is empty!</p>
+            <p id="empty-state" class="text-center text-gray-300 py-6 hidden">Your task list is empty!</p>
         </div>
     </div>
 
     <!-- Calendar Modal -->
     <div id="calendar-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+        <div class="glass-panel rounded-2xl p-6 w-full max-w-sm text-center text-gray-800 dark:text-gray-200">
             <div class="flex justify-between items-center mb-4">
-                <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&lt;</button>
-                <button id="month-year-header" class="text-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1 rounded-lg"></button>
-                <button id="next-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&gt;</button>
+                <button id="prev-btn" class="p-2 rounded-full hover:bg-white/20">&lt;</button>
+                <button id="month-year-header" class="text-xl font-bold hover:bg-white/20 px-3 py-1 rounded-lg"></button>
+                <button id="next-btn" class="p-2 rounded-full hover:bg-white/20">&gt;</button>
             </div>
             <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
             <div id="month-grid" class="grid grid-cols-3 gap-2 hidden"></div>
             <div id="year-grid" class="grid grid-cols-4 gap-2 hidden"></div>
             <div class="flex gap-4 mt-6">
-                <button id="calendar-cancel-btn" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                <button id="calendar-ok-btn" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+                <button id="calendar-cancel-btn" class="w-1/2 bg-white/20 hover:bg-white/30 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="calendar-ok-btn" class="w-1/2 bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-4 rounded-lg">OK</button>
             </div>
         </div>
     </div>
     
     <!-- Time Picker Modal -->
     <div id="time-picker-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+        <div class="glass-panel rounded-2xl p-6 w-full max-w-sm text-center text-gray-800 dark:text-gray-200">
             <h3 id="clock-title" class="text-xl font-bold mb-4">Set Time</h3>
-            <canvas id="clock-canvas" width="250" height="250" class="block mx-auto"></canvas>
+            <canvas id="clock-canvas" width="250" height="250" class="block mx-auto rounded-full bg-white/80"></canvas>
             <div class="flex justify-center gap-2 my-4">
-                <button id="ampm-am" class="px-4 py-2 rounded-lg font-semibold">AM</button>
-                <button id="ampm-pm" class="px-4 py-2 rounded-lg font-semibold">PM</button>
+                <button id="ampm-am" class="px-4 py-2 rounded-lg font-semibold glass-button">AM</button>
+                <button id="ampm-pm" class="px-4 py-2 rounded-lg font-semibold glass-button">PM</button>
             </div>
             <div class="flex gap-4">
-                <button id="time-picker-cancel" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                <button id="time-picker-next" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg">Next</button>
-                <button id="time-picker-ok" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg hidden">OK</button>
+                <button id="time-picker-cancel" class="w-1/2 bg-white/20 hover:bg-white/30 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="time-picker-next" class="w-1/2 bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-4 rounded-lg">Next</button>
+                <button id="time-picker-ok" class="w-1/2 bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-4 rounded-lg hidden">OK</button>
             </div>
         </div>
     </div>
 
     <!-- Custom Alert Modal -->
     <div id="custom-alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+        <div class="glass-panel rounded-2xl p-6 w-full max-w-sm text-center text-gray-800 dark:text-gray-200">
             <p id="custom-alert-message" class="text-lg mb-6"></p>
-            <button id="custom-alert-close" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-8 rounded-lg">OK</button>
+            <button id="custom-alert-close" class="bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-8 rounded-lg">OK</button>
         </div>
     </div>
 
@@ -178,12 +208,12 @@
         function drawFace(ctx, radius) {
             ctx.beginPath();
             ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.fill();
             const grad = ctx.createRadialGradient(0, 0, radius * 0.95, 0, 0, radius * 1.05);
-            grad.addColorStop(0, '#ddd');
-            grad.addColorStop(0.5, 'white');
-            grad.addColorStop(1, '#ddd');
+            grad.addColorStop(0, 'rgba(200, 200, 200, 0.1)');
+            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+            grad.addColorStop(1, 'rgba(200, 200, 200, 0.1)');
             ctx.strokeStyle = grad;
             ctx.lineWidth = radius * 0.1;
             ctx.stroke();
@@ -334,7 +364,7 @@
             const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
             dayHeaders.forEach(day => {
                 const dayEl = document.createElement('div');
-                dayEl.className = 'text-center font-bold text-gray-500 text-sm';
+                dayEl.className = 'text-center font-bold text-gray-400 text-sm';
                 dayEl.textContent = day;
                 calendarGrid.appendChild(dayEl);
             });
@@ -350,13 +380,12 @@
                 
                 const today = new Date();
                 const isToday = i === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-                
-                if (isToday) {
-                    dayEl.classList.add('bg-gray-200', 'dark:bg-gray-700');
-                }
+                const isSelected = tempSelectedDate && i === tempSelectedDate.getDate() && month === tempSelectedDate.getMonth() && year === tempSelectedDate.getFullYear();
 
-                if (tempSelectedDate && i === tempSelectedDate.getDate() && month === tempSelectedDate.getMonth() && year === tempSelectedDate.getFullYear()) {
-                    dayEl.classList.add('bg-violet-600', 'text-white');
+                if (isSelected) {
+                    dayEl.classList.add('bg-violet-500', 'text-white');
+                } else if (isToday) {
+                    dayEl.classList.add('bg-white/20');
                 }
 
                 dayEl.addEventListener('click', () => {
@@ -376,7 +405,7 @@
             months.forEach((month, index) => {
                 const monthEl = document.createElement('div');
                 monthEl.textContent = month;
-                monthEl.className = 'calendar-month text-center p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700';
+                monthEl.className = 'calendar-month text-center p-3 rounded-lg hover:bg-white/20';
                 monthEl.addEventListener('click', () => {
                     calendarDate.setMonth(index);
                     calendarState = 'day';
@@ -398,7 +427,7 @@
                 const year = startYear + i;
                 const yearEl = document.createElement('div');
                 yearEl.textContent = year;
-                yearEl.className = 'calendar-year text-center p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700';
+                yearEl.className = 'calendar-year text-center p-3 rounded-lg hover:bg-white/20';
                 yearEl.addEventListener('click', () => {
                     calendarDate.setFullYear(year);
                     calendarState = 'month';
@@ -416,15 +445,15 @@
         
         function updateAmPmButtons() {
             if (clockTime.ampm === 'AM') {
-                amAmBtn.classList.add('bg-violet-600', 'text-white');
-                amAmBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
-                amPmBtn.classList.remove('bg-violet-600', 'text-white');
-                amPmBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+                amAmBtn.classList.add('bg-violet-500', 'text-white');
+                amAmBtn.classList.remove('glass-button');
+                amPmBtn.classList.remove('bg-violet-500', 'text-white');
+                amPmBtn.classList.add('glass-button');
             } else {
-                amPmBtn.classList.add('bg-violet-600', 'text-white');
-                amPmBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
-                amAmBtn.classList.remove('bg-violet-600', 'text-white');
-                amAmBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+                amPmBtn.classList.add('bg-violet-500', 'text-white');
+                amPmBtn.classList.remove('glass-button');
+                amAmBtn.classList.remove('bg-violet-500', 'text-white');
+                amAmBtn.classList.add('glass-button');
             }
         }
 
@@ -524,7 +553,7 @@
 
         function createTaskElement(task) {
             const li = document.createElement('li');
-            li.className = `task-item bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm transition-all duration-300 ${task.completed ? 'completed' : ''}`;
+            li.className = `task-item glass-panel p-4 rounded-lg ${task.completed ? 'opacity-60' : ''}`;
             li.dataset.id = task.id;
 
             const mainContent = document.createElement('div');
@@ -535,7 +564,7 @@
             taskContent.onclick = () => toggleTaskStatus(task.id);
             
             const checkbox = document.createElement('div');
-            checkbox.className = `w-6 h-6 rounded-md border-2 ${task.completed ? 'bg-violet-500 border-violet-500' : 'border-gray-300 dark:border-gray-500'} flex-shrink-0 flex items-center justify-center transition-all duration-300`;
+            checkbox.className = `w-6 h-6 rounded-md border-2 ${task.completed ? 'bg-violet-500 border-violet-500' : 'border-white/50'} flex-shrink-0 flex items-center justify-center transition-all duration-300`;
             if(task.completed) {
                 checkbox.innerHTML = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
             }
@@ -548,8 +577,8 @@
             taskContent.appendChild(span);
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = `<svg class="w-6 h-6 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
-            deleteBtn.className = 'ml-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 flex-shrink-0';
+            deleteBtn.innerHTML = `<svg class="w-6 h-6 text-gray-300 hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+            deleteBtn.className = 'ml-4 p-2 rounded-full hover:bg-white/10 flex-shrink-0';
             deleteBtn.onclick = (e) => { e.stopPropagation(); deleteTask(task.id); };
 
             mainContent.appendChild(taskContent);
@@ -566,7 +595,7 @@
                 const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
 
                 dueDateEl.textContent = `Due: ${dueDate.toLocaleDateString(undefined, dateOptions)} ${dueDate.toLocaleTimeString(undefined, timeOptions)}`;
-                dueDateEl.className = `text-sm mt-2 pl-10 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500 dark:text-gray-400'}`;
+                dueDateEl.className = `text-sm mt-2 pl-10 ${isOverdue ? 'text-red-400 font-semibold' : 'text-gray-300'}`;
                 li.appendChild(dueDateEl);
             }
             return li;
@@ -583,13 +612,13 @@
 
         function updateBellColor() {
             if (!("Notification" in window)) return;
-            notificationBellIcon.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
+            notificationBellIcon.classList.remove('text-gray-200', 'text-green-400', 'text-red-400');
             if (Notification.permission === "granted") {
-                notificationBellIcon.classList.add('text-green-500');
+                notificationBellIcon.classList.add('text-green-400');
             } else if (Notification.permission === "denied") {
-                notificationBellIcon.classList.add('text-red-500');
+                notificationBellIcon.classList.add('text-red-400');
             } else {
-                notificationBellIcon.classList.add('text-gray-500');
+                notificationBellIcon.classList.add('text-gray-200');
             }
         }
 
