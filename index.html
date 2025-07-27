@@ -1,89 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
-  <title>Task Manager</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <form id="taskForm">
-    <input type="text" id="task" placeholder="Enter your task" required />
-    <input type="date" id="dueDate" />
-    <input type="time" id="dueTime" />
-    <button type="submit">Add</button>
-  </form>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-500">
 
-  <ul id="taskList"></ul>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-3xl">
+        <header class="text-center mb-8">
+            <div class="flex justify-center items-center gap-4">
+                <h1 class="text-4xl sm:text-5xl font-bold text-violet-600 dark:text-violet-400">Task Manager</h1>
+                <button id="notification-bell" title="Manage Notifications" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    <svg id="notification-bell-icon" class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                </button>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Organize your work and life, finally.</p>
+        </header>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const form = document.getElementById('taskForm');
-      const taskInput = document.getElementById('task');
-      const dueDateInput = document.getElementById('dueDate');
-      const dueTimeInput = document.getElementById('dueTime');
-      const taskList = document.getElementById('taskList');
+        <!-- Form to add new tasks -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mb-8">
+            <form id="add-task-form" class="space-y-4">
+                <input type="text" id="task-input" placeholder="Add a new task..." class="w-full bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-violet-500 focus:ring-0 rounded-lg px-4 py-3 text-lg transition-colors duration-300" required>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button type="button" id="set-date-btn" class="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Date</button>
+                    <button type="button" id="set-time-btn" class="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg transition-colors duration-300">Set Time</button>
+                </div>
+                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                    Add Task
+                </button>
+            </form>
+        </div>
 
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const task = taskInput.value.trim();
-        const date = dueDateInput.value;
-        const time = dueTimeInput.value;
+        <!-- Loading Spinner -->
+        <div id="loader" class="text-center py-10 hidden">
+             <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-violet-500 mx-auto"></div>
+             <p class="mt-4 text-gray-500">Loading tasks...</p>
+        </div>
 
-        if (!task || !date || !time) {
-          alert('Please fill all fields.');
-          return;
-        }
+        <!-- To-Do List -->
+        <div id="task-list-container" class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-lg">
+            <ul id="task-list" class="space-y-4"></ul>
+            <p id="empty-state" class="text-center text-gray-500 py-6 hidden">Your task list is empty!</p>
+        </div>
+    </div>
 
-        const li = document.createElement('li');
+    <!-- Calendar Modal -->
+    <div id="calendar-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <div class="flex justify-between items-center mb-4">
+                <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&lt;</button>
+                <button id="month-year-header" class="text-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1 rounded-lg"></button>
+                <button id="next-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&gt;</button>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+            <div id="month-grid" class="grid grid-cols-3 gap-2 hidden"></div>
+            <div id="year-grid" class="grid grid-cols-4 gap-2 hidden"></div>
+            <div class="flex gap-4 mt-6">
+                <button id="calendar-cancel-btn" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="calendar-ok-btn" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Time Picker Modal -->
+    <div id="time-picker-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <h3 id="clock-title" class="text-xl font-bold mb-4">Set Time</h3>
+            <canvas id="clock-canvas" width="250" height="250" class="block mx-auto"></canvas>
+            <div class="flex justify-center gap-2 my-4">
+                <button id="ampm-am" class="px-4 py-2 rounded-lg font-semibold">AM</button>
+                <button id="ampm-pm" class="px-4 py-2 rounded-lg font-semibold">PM</button>
+            </div>
+            <div class="flex gap-4">
+                <button id="time-picker-cancel" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="time-picker-next" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg">Next</button>
+                <button id="time-picker-ok" class="w-1/2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-lg hidden">OK</button>
+            </div>
+        </div>
+    </div>
 
-        const text = document.createElement('span');
-        text.textContent = task;
+    <!-- Custom Alert Modal -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <p id="custom-alert-message" class="text-lg mb-6"></p>
+            <button id="custom-alert-close" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-8 rounded-lg">OK</button>
+        </div>
+    </div>
 
-        const meta = document.createElement('span');
-        meta.className = 'task-meta';
-        meta.textContent = `Due: ${date} ${time}`;
-
-        const doneBtn = document.createElement('button');
-        doneBtn.textContent = 'Done';
-        doneBtn.type = 'button';
-
-        const undoneBtn = document.createElement('button');
-        undoneBtn.textContent = 'Undone';
-        undoneBtn.type = 'button';
-        undoneBtn.style.display = 'none';
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.type = 'button';
-
-        // Done → Mark as completed
-        doneBtn.addEventListener('click', () => {
-          text.classList.add('completed');
-          doneBtn.style.display = 'none';
-          undoneBtn.style.display = 'inline-block';
-        });
-
-        // Undone → Remove line-through
-        undoneBtn.addEventListener('click', () => {
-          text.classList.remove('completed');
-          undoneBtn.style.display = 'none';
-          doneBtn.style.display = 'inline-block';
-        });
-
-        // Delete → Remove task
-        deleteBtn.addEventListener('click', () => {
-          li.remove();
-        });
-
-        li.append(text, meta, doneBtn, undoneBtn, deleteBtn);
-        taskList.appendChild(li);
-
-        taskInput.value = '';
-        dueDateInput.value = '';
-        dueTimeInput.value = '';
-      });
-    });
-  </script>
 </body>
 </html>
