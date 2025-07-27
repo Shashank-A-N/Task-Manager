@@ -6,6 +6,25 @@
     <title>Task Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #9ca3af; /* gray-400 */
+        }
+        #clock-canvas, .calendar-day, .calendar-month, .calendar-year {
+            cursor: pointer;
+            touch-action: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-500">
 
@@ -90,5 +109,650 @@
         </div>
     </div>
 
+    <script>
+        // --- App State ---
+        let localTasks = [];
+        let notificationInterval = null;
+        let selectedDate = null;
+        let selectedTime = { hour: null, minute: null, ampm: 'AM' };
+
+        // --- UI Elements ---
+        const taskForm = document.getElementById('add-task-form');
+        const taskInput = document.getElementById('task-input');
+        const setDateBtn = document.getElementById('set-date-btn');
+        const setTimeBtn = document.getElementById('set-time-btn');
+        const taskList = document.getElementById('task-list');
+        const loader = document.getElementById('loader');
+        const taskListContainer = document.getElementById('task-list-container');
+        const emptyState = document.getElementById('empty-state');
+        const notificationBell = document.getElementById('notification-bell');
+        const notificationBellIcon = document.getElementById('notification-bell-icon');
+        
+        // Calendar Modal Elements
+        const calendarModal = document.getElementById('calendar-modal');
+        const monthYearHeader = document.getElementById('month-year-header');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthGrid = document.getElementById('month-grid');
+        const yearGrid = document.getElementById('year-grid');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const calendarOkBtn = document.getElementById('calendar-ok-btn');
+        const calendarCancelBtn = document.getElementById('calendar-cancel-btn');
+        let calendarDate = new Date();
+        let tempSelectedDate = null;
+        let calendarState = 'day'; // 'day', 'month', 'year'
+
+        // Time Picker Modal Elements
+        const timePickerModal = document.getElementById('time-picker-modal');
+        const clockTitle = document.getElementById('clock-title');
+        const timePickerNextBtn = document.getElementById('time-picker-next');
+        const timePickerOkBtn = document.getElementById('time-picker-ok');
+        const timePickerCancelBtn = document.getElementById('time-picker-cancel');
+        const amAmBtn = document.getElementById('ampm-am');
+        const amPmBtn = document.getElementById('ampm-pm');
+
+        // Alert Modal Elements
+        const alertModal = document.getElementById('custom-alert-modal');
+        const alertMessage = document.getElementById('custom-alert-message');
+        const alertCloseBtn = document.getElementById('custom-alert-close');
+        
+        // --- Clock Canvas Logic ---
+        const canvas = document.getElementById('clock-canvas');
+        const ctx = canvas.getContext('2d');
+        const radius = canvas.height / 2;
+        ctx.translate(radius, radius);
+        const handRadius = radius * 0.90;
+        
+        let clockTime = { hour: 3, minute: 0, ampm: 'PM' };
+        let clockState = 'hour'; // 'hour' or 'minute'
+        let draggingHand = null;
+
+        function drawClock() {
+            ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
+            drawFace(ctx, handRadius);
+            drawNumbers(ctx, handRadius, clockState);
+            drawHands(ctx, clockTime, handRadius, clockState);
+            drawCenterDisplay(ctx, clockTime, clockState, handRadius);
+        }
+
+        function drawFace(ctx, radius) {
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            const grad = ctx.createRadialGradient(0, 0, radius * 0.95, 0, 0, radius * 1.05);
+            grad.addColorStop(0, '#ddd');
+            grad.addColorStop(0.5, 'white');
+            grad.addColorStop(1, '#ddd');
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = radius * 0.1;
+            ctx.stroke();
+        }
+
+        function drawNumbers(ctx, radius, state) {
+            const isHourMode = state === 'hour';
+            ctx.font = radius * 0.12 + "px Inter";
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "center";
+            ctx.fillStyle = '#333';
+
+            for (let i = 0; i < 60; i++) {
+                const ang = i * Math.PI / 30;
+                const x = radius * 0.85 * Math.sin(ang);
+                const y = -radius * 0.85 * Math.cos(ang);
+                
+                if (isHourMode) {
+                    if (i % 5 === 0) {
+                        const num = (i / 5 === 0) ? 12 : i / 5;
+                        ctx.fillText(num.toString(), x, y);
+                    }
+                } else {
+                     if (i % 5 === 0) {
+                        const numStr = i === 0 ? '00' : i.toString();
+                        ctx.fillText(numStr, x, y);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        
+        function drawCenterDisplay(ctx, time, state, radius) {
+            ctx.fillStyle = '#8b5cf6';
+            ctx.font = "bold " + radius * 0.4 + "px Inter";
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "center";
+            let text;
+            if (state === 'hour') {
+                text = time.hour.toString();
+            } else {
+                text = time.minute.toString().padStart(2, '0');
+            }
+            ctx.fillText(text, 0, 0);
+        }
+
+        function drawHands(ctx, time, radius, state) {
+            let hour = time.hour % 12;
+            let minute = time.minute;
+            let hourAngle;
+            
+            if (state === 'hour') {
+                hourAngle = (hour * Math.PI / 6);
+            } else {
+                hourAngle = (hour * Math.PI / 6) + (minute * Math.PI / (6 * 60));
+            }
+            
+            let minuteAngle = (minute * Math.PI / 30);
+            
+            if (state === 'hour') {
+                drawHand(ctx, hourAngle, radius * 0.5, radius * 0.07, '#333');
+            } else if (state === 'minute') {
+                drawHand(ctx, minuteAngle, radius * 0.8, radius * 0.07, '#333');
+            }
+        }
+
+        function drawHand(ctx, pos, length, width, color) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = "round";
+            ctx.moveTo(0, 0);
+            ctx.rotate(pos);
+            ctx.lineTo(0, -length);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, -length, width / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.rotate(-pos);
+        }
+
+        function getEventPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX || event.touches[0].clientX) - rect.left - radius;
+            const y = (event.clientY || event.touches[0].clientY) - rect.top - radius;
+            return {x, y};
+        }
+
+        function handleInteractionStart(event) {
+            event.preventDefault();
+            draggingHand = clockState;
+            handleInteractionMove(event);
+        }
+
+        function handleInteractionMove(event) {
+            if (!draggingHand) return;
+            event.preventDefault();
+            const pos = getEventPosition(event);
+            let angle = Math.atan2(pos.y, pos.x) + Math.PI / 2;
+
+            if (draggingHand === 'minute') {
+                let minute = Math.round(angle * (30 / Math.PI));
+                if (minute < 0) minute += 60;
+                clockTime.minute = minute % 60;
+            } else if (draggingHand === 'hour') {
+                let hour = Math.round(angle * (6 / Math.PI));
+                if (hour <= 0) hour += 12;
+                clockTime.hour = hour;
+            }
+            drawClock();
+        }
+
+        function handleInteractionEnd() {
+            draggingHand = null;
+            drawClock();
+        }
+
+        // --- Calendar Logic ---
+        function renderCalendar() {
+            calendarGrid.classList.add('hidden');
+            monthGrid.classList.add('hidden');
+            yearGrid.classList.add('hidden');
+
+            if (calendarState === 'day') {
+                renderDayView();
+            } else if (calendarState === 'month') {
+                renderMonthView();
+            } else if (calendarState === 'year') {
+                renderYearView();
+            }
+        }
+        
+        function renderDayView() {
+            calendarGrid.innerHTML = '';
+            calendarGrid.classList.remove('hidden');
+            const month = calendarDate.getMonth();
+            const year = calendarDate.getFullYear();
+            
+            monthYearHeader.textContent = `${calendarDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            dayHeaders.forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'text-center font-bold text-gray-500 text-sm';
+                dayEl.textContent = day;
+                calendarGrid.appendChild(dayEl);
+            });
+
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.textContent = i;
+                dayEl.className = 'calendar-day text-center p-2 rounded-full';
+                
+                const today = new Date();
+                const isToday = i === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                
+                if (isToday) {
+                    dayEl.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                }
+
+                if (tempSelectedDate && i === tempSelectedDate.getDate() && month === tempSelectedDate.getMonth() && year === tempSelectedDate.getFullYear()) {
+                    dayEl.classList.add('bg-violet-600', 'text-white');
+                }
+
+                dayEl.addEventListener('click', () => {
+                    tempSelectedDate = new Date(year, month, i);
+                    renderCalendar();
+                });
+                calendarGrid.appendChild(dayEl);
+            }
+        }
+
+        function renderMonthView() {
+            monthGrid.innerHTML = '';
+            monthGrid.classList.remove('hidden');
+            monthYearHeader.textContent = calendarDate.getFullYear();
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            months.forEach((month, index) => {
+                const monthEl = document.createElement('div');
+                monthEl.textContent = month;
+                monthEl.className = 'calendar-month text-center p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700';
+                monthEl.addEventListener('click', () => {
+                    calendarDate.setMonth(index);
+                    calendarState = 'day';
+                    renderCalendar();
+                });
+                monthGrid.appendChild(monthEl);
+            });
+        }
+
+        function renderYearView() {
+            yearGrid.innerHTML = '';
+            yearGrid.classList.remove('hidden');
+            const currentYear = calendarDate.getFullYear();
+            const startYear = Math.floor(currentYear / 12) * 12;
+            
+            monthYearHeader.textContent = `${startYear} - ${startYear + 11}`;
+
+            for (let i = 0; i < 12; i++) {
+                const year = startYear + i;
+                const yearEl = document.createElement('div');
+                yearEl.textContent = year;
+                yearEl.className = 'calendar-year text-center p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700';
+                yearEl.addEventListener('click', () => {
+                    calendarDate.setFullYear(year);
+                    calendarState = 'month';
+                    renderCalendar();
+                });
+                yearGrid.appendChild(yearEl);
+            }
+        }
+        
+        // --- General App Logic ---
+        function showCustomAlert(message) {
+            alertMessage.textContent = message;
+            alertModal.classList.remove('hidden');
+        }
+        
+        function updateAmPmButtons() {
+            if (clockTime.ampm === 'AM') {
+                amAmBtn.classList.add('bg-violet-600', 'text-white');
+                amAmBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+                amPmBtn.classList.remove('bg-violet-600', 'text-white');
+                amPmBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+            } else {
+                amPmBtn.classList.add('bg-violet-600', 'text-white');
+                amPmBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+                amAmBtn.classList.remove('bg-violet-600', 'text-white');
+                amAmBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+            }
+        }
+
+        function main() {
+            loadTasks();
+            updateBellColor();
+            setupNotificationChecker();
+        }
+
+        // --- Local Storage Functions ---
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(localTasks));
+        }
+
+        function loadTasks() {
+            const tasksJSON = localStorage.getItem('tasks');
+            if (tasksJSON) {
+                localTasks = JSON.parse(tasksJSON);
+                // Convert date strings back to Date objects
+                localTasks.forEach(task => {
+                    if (task.dueDate) {
+                        task.dueDate = new Date(task.dueDate);
+                    }
+                });
+            }
+            renderTasks(localTasks);
+        }
+
+        function addTask(text, date, time) {
+            if (!text.trim()) return;
+
+            let dueDate = null;
+            if (date) {
+                let timeString = '00:00:00'; // Default to midnight
+                if (time && time.hour !== null && time.minute !== null && time.ampm) {
+                    let twentyFourHour = parseInt(time.hour, 10);
+                    if (time.ampm === 'PM' && twentyFourHour < 12) twentyFourHour += 12;
+                    if (time.ampm === 'AM' && twentyFourHour === 12) twentyFourHour = 0;
+                    timeString = `${twentyFourHour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:00`;
+                }
+                
+                const dateTimeString = `${date}T${timeString}`;
+                dueDate = new Date(dateTimeString);
+                
+                if (isNaN(dueDate.getTime())) {
+                    showCustomAlert("Invalid date or time provided.");
+                    return;
+                }
+            }
+            
+            const newTask = {
+                id: Date.now().toString(),
+                text: text.trim(),
+                completed: false,
+                createdAt: new Date(),
+                dueDate: dueDate,
+                notificationSent: false
+            };
+            
+            localTasks.push(newTask);
+            saveTasks();
+            renderTasks(localTasks);
+        }
+
+        function toggleTaskStatus(taskId) {
+            const task = localTasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks(localTasks);
+            }
+        }
+
+        function deleteTask(taskId) {
+            localTasks = localTasks.filter(t => t.id !== taskId);
+            saveTasks();
+            renderTasks(localTasks);
+        }
+
+        function renderTasks(tasks) {
+            taskList.innerHTML = '';
+            showEmptyState(tasks.length === 0);
+            
+            tasks.sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
+                if (a.dueDate) return -1;
+                if (b.dueDate) return 1;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+
+            tasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function createTaskElement(task) {
+            const li = document.createElement('li');
+            li.className = `task-item bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm transition-all duration-300 ${task.completed ? 'completed' : ''}`;
+            li.dataset.id = task.id;
+
+            const mainContent = document.createElement('div');
+            mainContent.className = 'flex items-center justify-between';
+
+            const taskContent = document.createElement('div');
+            taskContent.className = 'flex items-center gap-4 cursor-pointer flex-grow min-w-0';
+            taskContent.onclick = () => toggleTaskStatus(task.id);
+            
+            const checkbox = document.createElement('div');
+            checkbox.className = `w-6 h-6 rounded-md border-2 ${task.completed ? 'bg-violet-500 border-violet-500' : 'border-gray-300 dark:border-gray-500'} flex-shrink-0 flex items-center justify-center transition-all duration-300`;
+            if(task.completed) {
+                checkbox.innerHTML = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            }
+            
+            const span = document.createElement('span');
+            span.textContent = task.text;
+            span.className = 'task-text text-lg flex-grow transition-colors duration-300 truncate';
+            
+            taskContent.appendChild(checkbox);
+            taskContent.appendChild(span);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = `<svg class="w-6 h-6 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+            deleteBtn.className = 'ml-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 flex-shrink-0';
+            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteTask(task.id); };
+
+            mainContent.appendChild(taskContent);
+            mainContent.appendChild(deleteBtn);
+            li.appendChild(mainContent);
+
+            if (task.dueDate) {
+                const dueDateEl = document.createElement('div');
+                const dueDate = new Date(task.dueDate);
+                const now = new Date();
+                const isOverdue = !task.completed && dueDate < now;
+                
+                const dateOptions = { year: '2-digit', month: 'numeric', day: 'numeric' };
+                const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
+
+                dueDateEl.textContent = `Due: ${dueDate.toLocaleDateString(undefined, dateOptions)} ${dueDate.toLocaleTimeString(undefined, timeOptions)}`;
+                dueDateEl.className = `text-sm mt-2 pl-10 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500 dark:text-gray-400'}`;
+                li.appendChild(dueDateEl);
+            }
+            return li;
+        }
+
+        function showLoader(isLoading) {
+            loader.style.display = isLoading ? 'block' : 'none';
+            taskListContainer.style.display = isLoading ? 'none' : 'block';
+        }
+
+        function showEmptyState(isEmpty) {
+            emptyState.style.display = isEmpty ? 'block' : 'none';
+        }
+
+        function updateBellColor() {
+            if (!("Notification" in window)) return;
+            notificationBellIcon.classList.remove('text-gray-500', 'text-green-500', 'text-red-500');
+            if (Notification.permission === "granted") {
+                notificationBellIcon.classList.add('text-green-500');
+            } else if (Notification.permission === "denied") {
+                notificationBellIcon.classList.add('text-red-500');
+            } else {
+                notificationBellIcon.classList.add('text-gray-500');
+            }
+        }
+
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                showCustomAlert("This browser does not support desktop notification.");
+                return;
+            }
+            
+            if (Notification.permission === "granted") {
+                showCustomAlert("Notifications are already enabled!");
+            } else if (Notification.permission === "denied") {
+                showCustomAlert("Notifications are blocked. You'll need to enable them in your browser settings.");
+            } else {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("Notifications Enabled!", { body: "You will now receive alerts for your tasks." });
+                    }
+                    updateBellColor();
+                });
+            }
+        }
+
+        function setupNotificationChecker() {
+            if (notificationInterval) clearInterval(notificationInterval);
+
+            notificationInterval = setInterval(() => {
+                if (Notification.permission !== "granted") return;
+                
+                const now = new Date();
+                localTasks.forEach(task => {
+                    if (!task.completed && !task.notificationSent && task.dueDate) {
+                        const dueDate = new Date(task.dueDate);
+                        if (dueDate <= now) {
+                            new Notification("Task Due!", {
+                                body: task.text,
+                                icon: 'https://placehold.co/48x48/8b5cf6/ffffff?text=!'
+                            });
+                            
+                            task.notificationSent = true;
+                            saveTasks();
+                        }
+                    }
+                });
+            }, 10000);
+        }
+
+        // --- Event Listeners ---
+        alertCloseBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
+        canvas.addEventListener('mousedown', handleInteractionStart);
+        canvas.addEventListener('mousemove', handleInteractionMove);
+        canvas.addEventListener('mouseup', handleInteractionEnd);
+        canvas.addEventListener('mouseleave', handleInteractionEnd);
+        canvas.addEventListener('touchstart', handleInteractionStart);
+        canvas.addEventListener('touchmove', handleInteractionMove);
+        canvas.addEventListener('touchend', handleInteractionEnd);
+        amAmBtn.addEventListener('click', () => { clockTime.ampm = 'AM'; updateAmPmButtons(); });
+        amPmBtn.addEventListener('click', () => { clockTime.ampm = 'PM'; updateAmPmButtons(); });
+
+        setDateBtn.addEventListener('click', () => {
+            calendarState = 'day';
+            calendarDate = selectedDate || new Date();
+            tempSelectedDate = selectedDate;
+            renderCalendar();
+            calendarModal.classList.remove('hidden');
+        });
+        prevBtn.addEventListener('click', () => {
+            if (calendarState === 'day') {
+                calendarDate.setMonth(calendarDate.getMonth() - 1);
+            } else if (calendarState === 'month') {
+                calendarDate.setFullYear(calendarDate.getFullYear() - 1);
+            } else { // year
+                calendarDate.setFullYear(calendarDate.getFullYear() - 12);
+            }
+            renderCalendar();
+        });
+        nextBtn.addEventListener('click', () => {
+             if (calendarState === 'day') {
+                calendarDate.setMonth(calendarDate.getMonth() + 1);
+            } else if (calendarState === 'month') {
+                calendarDate.setFullYear(calendarDate.getFullYear() + 1);
+            } else { // year
+                calendarDate.setFullYear(calendarDate.getFullYear() + 12);
+            }
+            renderCalendar();
+        });
+        monthYearHeader.addEventListener('click', () => {
+            if (calendarState === 'day') {
+                calendarState = 'month';
+            } else if (calendarState === 'month') {
+                calendarState = 'year';
+            }
+            renderCalendar();
+        });
+        calendarCancelBtn.addEventListener('click', () => {
+            calendarModal.classList.add('hidden');
+        });
+        calendarOkBtn.addEventListener('click', () => {
+            selectedDate = tempSelectedDate;
+            if (selectedDate) {
+                setDateBtn.textContent = selectedDate.toLocaleDateString();
+                setDateBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+                setDateBtn.classList.add('bg-violet-200', 'dark:bg-violet-800');
+            }
+            calendarModal.classList.add('hidden');
+        });
+
+        setTimeBtn.addEventListener('click', () => {
+            const now = new Date();
+            clockState = 'hour';
+            clockTitle.textContent = 'Set Hour';
+            timePickerNextBtn.classList.remove('hidden');
+            timePickerOkBtn.classList.add('hidden');
+
+            clockTime.hour = selectedTime.hour || (now.getHours() % 12 === 0 ? 12 : now.getHours() % 12);
+            clockTime.minute = selectedTime.minute || now.getMinutes();
+            clockTime.ampm = selectedTime.ampm || (now.getHours() >= 12 ? 'PM' : 'AM');
+            
+            updateAmPmButtons();
+            drawClock();
+            timePickerModal.classList.remove('hidden');
+        });
+
+        timePickerNextBtn.addEventListener('click', () => {
+            clockState = 'minute';
+            clockTitle.textContent = 'Set Minute';
+            timePickerNextBtn.classList.add('hidden');
+            timePickerOkBtn.classList.remove('hidden');
+            drawClock();
+        });
+
+        timePickerCancelBtn.addEventListener('click', () => {
+            timePickerModal.classList.add('hidden');
+        });
+
+        timePickerOkBtn.addEventListener('click', () => {
+            selectedTime.hour = clockTime.hour;
+            selectedTime.minute = clockTime.minute;
+            selectedTime.ampm = clockTime.ampm;
+            setTimeBtn.textContent = `${selectedTime.hour}:${selectedTime.minute.toString().padStart(2, '0')} ${selectedTime.ampm}`;
+            setTimeBtn.classList.remove('bg-gray-200', 'dark:bg-gray-600');
+            setTimeBtn.classList.add('bg-violet-200', 'dark:bg-violet-800');
+            timePickerModal.classList.add('hidden');
+        });
+
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dateString = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
+            addTask(taskInput.value, dateString, selectedTime);
+            taskForm.reset();
+            selectedDate = null;
+            selectedTime = { hour: null, minute: null, ampm: 'AM' };
+            setDateBtn.textContent = 'Set Date';
+            setDateBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+            setDateBtn.classList.remove('bg-violet-200', 'dark:bg-violet-800');
+            setTimeBtn.textContent = 'Set Time';
+            setTimeBtn.classList.add('bg-gray-200', 'dark:bg-gray-600');
+            setTimeBtn.classList.remove('bg-violet-200', 'dark:bg-violet-800');
+        });
+        
+        notificationBell.addEventListener('click', requestNotificationPermission);
+
+        main();
+    </script>
 </body>
 </html>
