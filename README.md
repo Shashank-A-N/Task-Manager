@@ -232,6 +232,7 @@ NexTask is **fully responsive** across all device sizes:
 
 ---
 
+
 ## 📂 Project Structure
 
 ```
